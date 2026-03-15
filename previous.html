@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Previous Reports</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="previous-page">
+  <header class="page-header">
+    <h1>Previous Medical Reports</h1>
+    <div class="button-group">
+      <a href="dashboard.html" class="link-button btn-secondary">Back to Dashboard</a>
+      <button type="button" class="btn-primary" onclick="exportAllReports()">Export All</button>
+      <button type="button" class="delete-btn" onclick="clearReports()">Clear All</button>
+    </div>
+  </header>
+
+  <section class="mini-stats" aria-label="Report summary">
+    <article class="mini-stat">
+      <h3>Visible</h3>
+      <p id="summaryVisible">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>Stored</h3>
+      <p id="summaryStored">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>Critical</h3>
+      <p id="summaryCritical">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>Emergency Priority</h3>
+      <p id="summaryEmergency">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>Urgent Priority</h3>
+      <p id="summaryUrgent">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>Routine Priority</h3>
+      <p id="summaryRoutine">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>Follow-up Due</h3>
+      <p id="summaryFollowUpDue">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>Follow-up Overdue</h3>
+      <p id="summaryFollowUpOverdue">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>Follow-up Scheduled</h3>
+      <p id="summaryFollowUpScheduled">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>No Follow-up Plan</h3>
+      <p id="summaryNoFollowUp">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>AI Needs Attention</h3>
+      <p id="summaryNeedsAttention">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>Priority Mismatch</h3>
+      <p id="summaryPriorityMismatch">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>ICU Cases</h3>
+      <p id="summaryICU">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>High Pain</h3>
+      <p id="summaryHighPain">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>ICU Transfer</h3>
+      <p id="summaryIcuTransfer">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>Comorbidity Cases</h3>
+      <p id="summaryComorbidity">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>Average Pain</h3>
+      <p id="summaryAveragePain">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>Average Risk</h3>
+      <p id="summaryAverage">0%</p>
+    </article>
+  </section>
+
+  <section class="controls-row" aria-label="Report filters">
+    <input
+      id="searchReport"
+      type="search"
+      placeholder="Search by patient, symptom, doctor"
+      aria-label="Search reports"
+      oninput="filterReports()"
+    >
+
+    <select id="priorityFilter" aria-label="Priority filter" onchange="filterReports()">
+      <option value="all">Priority: All</option>
+      <option value="Routine">Routine</option>
+      <option value="Urgent">Urgent</option>
+      <option value="Emergency">Emergency</option>
+    </select>
+
+    <select id="triageFilter" aria-label="Triage filter" onchange="filterReports()">
+      <option value="all">Triage: All</option>
+      <option value="Routine">Routine</option>
+      <option value="Urgent">Urgent</option>
+      <option value="Emergency">Emergency</option>
+    </select>
+
+    <select id="admissionFilter" aria-label="Admission filter" onchange="filterReports()">
+      <option value="all">Admission: All</option>
+      <option value="Not Admitted">Not Admitted</option>
+      <option value="Observation">Observation</option>
+      <option value="Admitted">Admitted</option>
+      <option value="ICU">ICU</option>
+    </select>
+
+    <select id="consultationFilter" aria-label="Consultation filter" onchange="filterReports()">
+      <option value="all">Consultation: All</option>
+      <option value="In-person">In-person</option>
+      <option value="Tele-consult">Tele-consult</option>
+      <option value="Home Visit">Home Visit</option>
+    </select>
+
+    <select id="followUpFilter" aria-label="Follow-up filter" onchange="filterReports()">
+      <option value="all">Follow-up: All</option>
+      <option value="due">Due or Overdue</option>
+      <option value="today">Due Today</option>
+      <option value="overdue">Overdue</option>
+      <option value="scheduled">Scheduled</option>
+      <option value="none">Not Set</option>
+    </select>
+
+    <select id="sortReports" aria-label="Sort reports" onchange="filterReports()">
+      <option value="newest">Sort: Newest</option>
+      <option value="oldest">Sort: Oldest</option>
+      <option value="risk-high">Sort: Highest Risk</option>
+      <option value="risk-low">Sort: Lowest Risk</option>
+      <option value="priority">Sort: Priority</option>
+    </select>
+
+    <label class="inline-check" for="highRiskOnly">
+      <input id="highRiskOnly" type="checkbox" onchange="filterReports()">
+      High risk only (>= 70%)
+    </label>
+
+    <label class="inline-check" for="comorbidityOnly">
+      <input id="comorbidityOnly" type="checkbox" onchange="filterReports()">
+      Comorbidity only
+    </label>
+
+    <label class="inline-check" for="priorityMismatchOnly">
+      <input id="priorityMismatchOnly" type="checkbox" onchange="filterReports()">
+      Priority mismatch only
+    </label>
+  </section>
+
+  <p id="reportsMessage" class="inline-message" aria-live="polite"></p>
+  <div id="reportContainer"></div>
+
+  <script src="script.js?v=20260314a"></script>
+</body>
+</html>
