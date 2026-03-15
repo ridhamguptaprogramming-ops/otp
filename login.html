@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareJR AI - Secure Login</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="login-page">
+  <main class="box" aria-labelledby="loginTitle">
+    <div class="brand-chip">CareJR AI Screening</div>
+    <h1 id="loginTitle">Secure Login</h1>
+    <p class="subtext">Enter phone or email to receive OTP and continue with the clinical workflow.</p>
+
+    <form id="loginForm" novalidate action="javascript:void(0);" onsubmit="return false;">
+      <label for="clinicCode">Clinic / Facility Code</label>
+      <input
+        type="text"
+        id="clinicCode"
+        placeholder="e.g. CRJ-NORTH-01"
+        maxlength="20"
+        aria-label="Clinic Code"
+        autocomplete="organization"
+      >
+
+      <label for="phone">Phone Number</label>
+      <input
+        type="tel"
+        id="phone"
+        placeholder="10-digit phone (optional if using email)"
+        maxlength="10"
+        pattern="[0-9]{10}"
+        inputmode="numeric"
+        autocomplete="tel"
+        aria-label="Phone Number"
+      >
+
+      <label for="emailLogin">Email</label>
+      <input
+        type="email"
+        id="emailLogin"
+        placeholder="name@example.com (optional if using phone)"
+        aria-label="Email Login"
+        autocomplete="email"
+      >
+
+      <button type="button" id="sendOtpBtn" class="btn-primary">Send OTP</button>
+
+      <div id="otpBox" class="soft-panel" hidden role="region" aria-live="polite">
+        <label for="otp">OTP</label>
+        <input
+          type="text"
+          id="otp"
+          placeholder="Enter 4-digit OTP"
+          maxlength="4"
+          pattern="[0-9]{4}"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          aria-label="OTP Code"
+        >
+        <div class="button-group">
+          <button type="button" onclick="verify()" class="btn-primary">Verify OTP</button>
+          <button type="button" id="resendBtn" onclick="resendOTP()" class="btn-secondary">Resend OTP</button>
+        </div>
+      </div>
+
+      <p id="authMessage" class="inline-message" aria-live="polite"></p>
+    </form>
+  </main>
+
+  <script src="script.js?v=20260314a"></script>
+</body>
+</html>

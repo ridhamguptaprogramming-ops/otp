@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareJR AI Screening</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="newdata-page">
+  <div class="container">
+    <aside class="left">
+      <h2>CareJR AI Monitoring</h2>
+      <p class="subtext">Live simulation while consultation notes are captured.</p>
+      <video id="video" autoplay muted playsinline></video>
+
+      <div class="status">Breathing: <span id="breathing">Idle</span></div>
+      <div class="status">Pulse: <span id="heart">Idle</span></div>
+
+      <a href="dashboard.html" class="text-link light-link">Back to Dashboard</a>
+    </aside>
+
+    <main class="right">
+      <div class="brand-chip">Clinical Intake</div>
+      <h1>Patient Medical Entry Form</h1>
+
+      <div class="split-grid">
+        <div>
+          <label for="patientName">Patient Name</label>
+          <input
+            id="patientName"
+            type="text"
+            placeholder="Patient Name"
+            aria-label="Patient Name"
+            autocomplete="name"
+            required
+          >
+        </div>
+        <div>
+          <label for="patientAge">Patient Age</label>
+          <input
+            id="patientAge"
+            type="text"
+            placeholder="Auto from DOB"
+            aria-label="Patient Age"
+            readonly
+          >
+        </div>
+      </div>
+
+      <div class="split-grid">
+        <div>
+          <label for="visitDate">Visit Date</label>
+          <input
+            type="date"
+            id="visitDate"
+            aria-label="Visit Date"
+            required
+          >
+        </div>
+        <div>
+          <label for="followUpDate">Follow-up Date</label>
+          <input
+            type="date"
+            id="followUpDate"
+            aria-label="Follow-up Date"
+          >
+        </div>
+      </div>
+
+      <div class="split-grid">
+        <div>
+          <label for="priority">Care Priority</label>
+          <select id="priority" aria-label="Care Priority">
+            <option value="Routine">Routine</option>
+            <option value="Urgent">Urgent</option>
+            <option value="Emergency">Emergency</option>
+          </select>
+        </div>
+        <div>
+          <label for="consultationType">Consultation Type</label>
+          <select id="consultationType" aria-label="Consultation Type">
+            <option value="In-person">In-person</option>
+            <option value="Tele-consult">Tele-consult</option>
+            <option value="Home Visit">Home Visit</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="split-grid">
+        <div>
+          <label for="admissionStatus">Admission Status</label>
+          <select id="admissionStatus" aria-label="Admission Status">
+            <option value="Not Admitted">Not Admitted</option>
+            <option value="Observation">Observation</option>
+            <option value="Admitted">Admitted</option>
+            <option value="ICU">ICU</option>
+          </select>
+        </div>
+        <div>
+          <label for="comorbidities">Comorbidities</label>
+          <input
+            id="comorbidities"
+            type="text"
+            placeholder="e.g. Diabetes, Hypertension"
+            aria-label="Comorbidities"
+          >
+        </div>
+      </div>
+
+      <label for="chiefComplaint">Chief Complaint</label>
+      <input
+        id="chiefComplaint"
+        type="text"
+        placeholder="Primary complaint (e.g. chest pain, cough)"
+        aria-label="Chief Complaint"
+      >
+
+      <div class="split-grid">
+        <div>
+          <label for="chiefComplaintDuration">Complaint Duration</label>
+          <input
+            id="chiefComplaintDuration"
+            type="text"
+            placeholder="e.g. 3 days, 2 weeks"
+            aria-label="Complaint Duration"
+          >
+        </div>
+        <div>
+          <label for="painLocation">Pain Location</label>
+          <input
+            id="painLocation"
+            type="text"
+            placeholder="e.g. Lower back, chest"
+            aria-label="Pain Location"
+          >
+        </div>
+      </div>
+
+      <label for="conversation">Doctor-Patient Conversation</label>
+      <textarea
+        id="conversation"
+        placeholder="Doctor-Patient Conversation (AI will analyze for symptoms)"
+        aria-label="Medical Conversation"
+      ></textarea>
+
+      <div class="button-group">
+        <button type="button" class="voice" onclick="startConversation()">Start Conversation</button>
+        <button type="button" class="stop" onclick="stopConversation()">Stop</button>
+      </div>
+
+      <label for="knownAllergies">Known Allergies</label>
+      <input
+        id="knownAllergies"
+        type="text"
+        placeholder="Known allergies (if any)"
+        aria-label="Known Allergies"
+      >
+
+      <label for="medicationAdherence">Medication Adherence</label>
+      <select id="medicationAdherence" aria-label="Medication Adherence">
+        <option value="Good">Good</option>
+        <option value="Partial">Partial</option>
+        <option value="Poor">Poor</option>
+      </select>
+
+      <div class="split-grid">
+        <div>
+          <label for="painScore">Pain Score (0-10)</label>
+          <input id="painScore" type="number" min="0" max="10" step="1" placeholder="4" aria-label="Pain Score">
+        </div>
+        <div>
+          <label for="oxygenSupport">Oxygen Support</label>
+          <select id="oxygenSupport" aria-label="Oxygen Support">
+            <option value="Room Air">Room Air</option>
+            <option value="Oxygen">Oxygen</option>
+            <option value="NIV">NIV</option>
+            <option value="Ventilator">Ventilator</option>
+          </select>
+        </div>
+      </div>
+
+      <h3>Vitals</h3>
+      <div class="split-grid tri-grid">
+        <div>
+          <label for="temperature">Temperature (F)</label>
+          <input id="temperature" type="number" step="0.1" min="90" max="110" placeholder="98.6" aria-label="Temperature">
+        </div>
+        <div>
+          <label for="spo2">SpO2 (%)</label>
+          <input id="spo2" type="number" min="50" max="100" placeholder="98" aria-label="SpO2">
+        </div>
+        <div>
+          <label for="weight">Weight (kg)</label>
+          <input id="weight" type="number" step="0.1" min="1" max="300" placeholder="65" aria-label="Weight">
+        </div>
+        <div>
+          <label for="height">Height (cm)</label>
+          <input id="height" type="number" step="0.1" min="30" max="250" placeholder="170" aria-label="Height">
+        </div>
+        <div>
+          <label for="bmi">BMI</label>
+          <input id="bmi" type="text" placeholder="Auto-calculated" aria-label="Body Mass Index" readonly>
+        </div>
+        <div>
+          <label for="pulseRate">Pulse Rate (BPM)</label>
+          <input id="pulseRate" type="number" min="30" max="220" placeholder="78" aria-label="Pulse Rate">
+        </div>
+        <div>
+          <label for="respRate">Respiratory Rate (/min)</label>
+          <input id="respRate" type="number" min="5" max="60" placeholder="16" aria-label="Respiratory Rate">
+        </div>
+        <div>
+          <label for="bloodSugar">Blood Sugar (mg/dL)</label>
+          <input id="bloodSugar" type="number" min="20" max="600" placeholder="110" aria-label="Blood Sugar">
+        </div>
+      </div>
+
+      <div class="split-grid">
+        <div>
+          <label for="bpSystolic">BP Systolic</label>
+          <input id="bpSystolic" type="number" min="60" max="240" placeholder="120" aria-label="BP Systolic">
+        </div>
+        <div>
+          <label for="bpDiastolic">BP Diastolic</label>
+          <input id="bpDiastolic" type="number" min="30" max="160" placeholder="80" aria-label="BP Diastolic">
+        </div>
+      </div>
+
+      <label for="symptoms">AI Detected Symptoms</label>
+      <textarea
+        id="symptoms"
+        placeholder="AI-Detected Symptoms"
+        readonly
+        aria-label="Detected Symptoms"
+      ></textarea>
+
+      <label for="diagnosis">Provisional Diagnosis</label>
+      <textarea
+        id="diagnosis"
+        placeholder="Clinical diagnosis"
+        aria-label="Diagnosis"
+      ></textarea>
+
+      <label for="medicines">Suggested Medicines</label>
+      <textarea
+        id="medicines"
+        placeholder="Suggested Medicines"
+        aria-label="Suggested Medicines"
+      ></textarea>
+
+      <label for="tests">Suggested Tests</label>
+      <textarea
+        id="tests"
+        placeholder="Suggested Tests"
+        aria-label="Suggested Tests"
+      ></textarea>
+
+      <label for="carePlan">Care Plan / Advice</label>
+      <textarea
+        id="carePlan"
+        placeholder="Diet, rest, hydration, follow-up advice"
+        aria-label="Care Plan"
+      ></textarea>
+
+      <label for="disposition">Disposition</label>
+      <select id="disposition" aria-label="Disposition">
+        <option value="Home Care">Home Care</option>
+        <option value="Observation">Observation</option>
+        <option value="Ward Admission">Ward Admission</option>
+        <option value="ICU Transfer">ICU Transfer</option>
+        <option value="Referred">Referred</option>
+      </select>
+
+      <label for="clinicalNotes">Additional Care Notes</label>
+      <textarea
+        id="clinicalNotes"
+        placeholder="Additional care instructions or follow-up notes"
+        aria-label="Additional Care Notes"
+      ></textarea>
+
+      <label for="doctor">Doctor Name/Signature</label>
+      <input
+        id="doctor"
+        type="text"
+        placeholder="Doctor Signature/Name"
+        aria-label="Doctor Signature"
+        required
+      >
+
+      <h3>Risk Assessment: <span id="risk" role="status">0</span>% (<span id="riskLevel">Low</span>)</h3>
+
+      <label for="triageRecommendation">AI Triage Recommendation</label>
+      <input
+        id="triageRecommendation"
+        type="text"
+        placeholder="Auto-generated from risk and vitals"
+        aria-label="Triage Recommendation"
+        readonly
+      >
+
+      <div class="button-group">
+        <button type="button" class="btn-primary" onclick="generateReport()">Generate Report</button>
+        <button type="button" class="btn-secondary" onclick="runAI()">Re-analyze with AI</button>
+        <button type="button" class="btn-secondary" onclick="saveDraft()">Save Draft</button>
+        <button type="button" class="btn-secondary" onclick="resetNewDataForm()">Reset Form</button>
+      </div>
+
+      <div class="button-group">
+        <button type="button" class="btn-pharmacy" onclick="sendPharmacy()">Send to Pharmacy</button>
+        <button type="button" class="btn-lab" onclick="sendLab()">Send to Lab</button>
+      </div>
+
+      <div id="after" hidden role="region" aria-live="polite">
+        <button type="button" class="btn-download" onclick="downloadPDF()">Download Report</button>
+        <button type="button" class="btn-success" onclick="storeReport()">Approve & Store</button>
+      </div>
+
+      <p id="newDataMessage" class="inline-message" aria-live="polite"></p>
+      <div id="preview" class="preview" role="region" aria-live="polite"></div>
+    </main>
+  </div>
+
+  <script src="script.js?v=20260314a"></script>
+</body>
+</html>
