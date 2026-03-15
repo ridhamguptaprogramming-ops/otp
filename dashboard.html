@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dashboard-page">
+  <header class="nav">
+    <button type="button" class="menu" aria-label="Toggle menu" onclick="toggle()">☰</button>
+    <h1>CareJR Dashboard</h1>
+    <button type="button" class="btn-ghost" onclick="logout()">Logout</button>
+  </header>
+
+  <aside class="sidebar" id="side" aria-label="Sidebar menu">
+    <a href="dashboard.html" class="active">Overview</a>
+    <a href="previous.html">Previous Data</a>
+    <a href="newdata.html">New Data</a>
+    <a href="newdata.html">Bills</a>
+    <a href="newdata.html">Lab Reports</a>
+    <a href="tel:108">Emergency Ambulance - 108</a>
+  </aside>
+
+  <main class="content">
+    <section class="profile-card">
+      <h2>Welcome, <span id="username">User</span></h2>
+      <div class="profile-grid">
+        <p><strong>DOB:</strong> <span id="dob">-</span></p>
+        <p><strong>Gender:</strong> <span id="gender">-</span></p>
+        <p><strong>Blood Group:</strong> <span id="bloodGroup">-</span></p>
+        <p><strong>State:</strong> <span id="state">-</span></p>
+        <p><strong>City:</strong> <span id="city">-</span></p>
+        <p><strong>Pincode:</strong> <span id="pincode">-</span></p>
+        <p><strong>Phone:</strong> <span id="phone">-</span></p>
+        <p><strong>Alternate Phone:</strong> <span id="alternatePhone">-</span></p>
+        <p><strong>Marital Status:</strong> <span id="maritalStatus">-</span></p>
+        <p><strong>Email:</strong> <span id="email">-</span></p>
+        <p><strong>Occupation:</strong> <span id="occupation">-</span></p>
+        <p><strong>Insurance:</strong> <span id="insuranceId">-</span></p>
+        <p><strong>Emergency:</strong> <span id="emergencyContact">-</span></p>
+        <p><strong>Emergency Relation:</strong> <span id="emergencyRelation">-</span></p>
+        <p><strong>Clinic:</strong> <span id="clinicCode">-</span></p>
+        <p class="profile-full"><strong>Address:</strong> <span id="address">-</span></p>
+      </div>
+    </section>
+
+    <section class="stats-grid" aria-label="Report statistics">
+      <article class="stat-card accent-total">
+        <h3>Total Reports</h3>
+        <p id="statTotal">0</p>
+      </article>
+      <article class="stat-card accent-high">
+        <h3>High Risk (&gt;=70%)</h3>
+        <p id="statHighRisk">0</p>
+      </article>
+      <article class="stat-card accent-critical">
+        <h3>Critical (&gt;=80%)</h3>
+        <p id="statCritical">0</p>
+      </article>
+      <article class="stat-card accent-moderate">
+        <h3>Moderate (30-59%)</h3>
+        <p id="statModerate">0</p>
+      </article>
+      <article class="stat-card accent-low">
+        <h3>Low (&lt;30%)</h3>
+        <p id="statLow">0</p>
+      </article>
+      <article class="stat-card accent-average">
+        <h3>Average Risk</h3>
+        <p id="statAverage">0%</p>
+      </article>
+      <article class="stat-card">
+        <h3>Routine Cases</h3>
+        <p id="statRoutine">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>Urgent Cases</h3>
+        <p id="statUrgent">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>Emergency Cases</h3>
+        <p id="statEmergency">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>Reports Today</h3>
+        <p id="statToday">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>Follow-up Due</h3>
+        <p id="statFollowUpDue">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>Follow-up Today</h3>
+        <p id="statFollowUpToday">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>Follow-up Overdue</h3>
+        <p id="statFollowUpOverdue">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>Follow-up Scheduled</h3>
+        <p id="statFollowUpScheduled">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>No Follow-up Plan</h3>
+        <p id="statNoFollowUp">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>AI Needs Attention</h3>
+        <p id="statNeedsAttention">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>AI Emergency Flag</h3>
+        <p id="statTriageEmergency">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>Priority Mismatch</h3>
+        <p id="statPriorityMismatch">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>Admitted / Observed</h3>
+        <p id="statAdmittedCases">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>ICU Cases</h3>
+        <p id="statIcuCases">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>Comorbidity Cases</h3>
+        <p id="statComorbidityCases">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>High Pain Cases</h3>
+        <p id="statHighPainCases">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>Tele-consults</h3>
+        <p id="statTeleConsultCases">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>ICU Transfers</h3>
+        <p id="statIcuTransferCases">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>Average Pain</h3>
+        <p id="statAveragePain">0</p>
+      </article>
+      <article class="stat-card">
+        <h3>Most Recent Visit</h3>
+        <p id="statLastVisit">-</p>
+      </article>
+    </section>
+
+    <section class="risk-breakdown" aria-label="Risk distribution chart">
+      <h3>Risk Distribution</h3>
+      <div class="meter-row">
+        <span>Low</span>
+        <div class="meter"><i id="meterLow"></i></div>
+        <strong id="meterLowLabel">0%</strong>
+      </div>
+      <div class="meter-row">
+        <span>Moderate</span>
+        <div class="meter"><i id="meterModerate"></i></div>
+        <strong id="meterModerateLabel">0%</strong>
+      </div>
+      <div class="meter-row">
+        <span>High</span>
+        <div class="meter"><i id="meterHigh"></i></div>
+        <strong id="meterHighLabel">0%</strong>
+      </div>
+      <div class="meter-row">
+        <span>Critical</span>
+        <div class="meter"><i id="meterCritical"></i></div>
+        <strong id="meterCriticalLabel">0%</strong>
+      </div>
+    </section>
+
+    <section class="quick-actions" aria-label="Quick actions">
+      <a href="newdata.html" class="link-button btn-primary">Create New Report</a>
+      <a href="previous.html" class="link-button btn-secondary">View Previous Reports</a>
+    </section>
+  </main>
+
+  <script src="script.js?v=20260314a"></script>
+</body>
+</html>
