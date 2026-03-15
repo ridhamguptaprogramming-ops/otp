@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile Details</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="details-page">
+  <main class="container" aria-labelledby="detailsTitle">
+    <div class="brand-chip">Patient Profile Setup</div>
+    <h1 id="detailsTitle">Complete Your Profile</h1>
+    <p class="subtext">This information is shown on dashboard and clinical reports.</p>
+
+    <form id="detailsForm" novalidate>
+      <label for="name">Full Name</label>
+      <input
+        type="text"
+        id="name"
+        placeholder="Full Name"
+        aria-label="Full Name"
+        pattern="^[a-zA-Z\s.'-]+$"
+        title="Name should contain only letters, spaces, apostrophe, or hyphen"
+        autocomplete="name"
+        required
+      >
+
+      <div class="split-grid">
+        <div>
+          <label for="dob">Date of Birth</label>
+          <input
+            type="date"
+            id="dob"
+            aria-label="Date of Birth"
+            required
+          >
+        </div>
+        <div>
+          <label for="gender">Gender</label>
+          <select id="gender" aria-label="Gender" required>
+            <option value="">Select Gender</option>
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="split-grid">
+        <div>
+          <label for="state">State</label>
+          <select id="state" aria-label="State" required>
+            <option value="">Select State</option>
+            <option value="Rajasthan">Rajasthan</option>
+            <option value="Delhi">Delhi</option>
+            <option value="Punjab">Punjab</option>
+            <option value="Haryana">Haryana</option>
+          </select>
+        </div>
+        <div>
+          <label for="city">City</label>
+          <input
+            type="text"
+            id="city"
+            placeholder="City"
+            aria-label="City"
+            autocomplete="address-level2"
+            required
+          >
+        </div>
+      </div>
+
+      <div class="split-grid">
+        <div>
+          <label for="pincode">Pincode</label>
+          <input
+            type="text"
+            id="pincode"
+            placeholder="6-digit pincode"
+            maxlength="6"
+            pattern="[0-9]{6}"
+            inputmode="numeric"
+            aria-label="Pincode"
+            autocomplete="postal-code"
+            required
+          >
+        </div>
+        <div>
+          <label for="address">Address</label>
+          <input
+            type="text"
+            id="address"
+            placeholder="Street / Locality"
+            aria-label="Address"
+            autocomplete="street-address"
+            required
+          >
+        </div>
+      </div>
+
+      <div class="split-grid">
+        <div>
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            placeholder="name@example.com"
+            aria-label="Email"
+            autocomplete="email"
+            required
+          >
+        </div>
+        <div>
+          <label for="insuranceId">Insurance ID</label>
+          <input
+            type="text"
+            id="insuranceId"
+            placeholder="Insurance policy/member id"
+            aria-label="Insurance ID"
+            maxlength="30"
+            autocomplete="off"
+          >
+        </div>
+      </div>
+
+      <div class="split-grid">
+        <div>
+          <label for="alternatePhone">Alternate Phone</label>
+          <input
+            type="tel"
+            id="alternatePhone"
+            placeholder="Optional 10-digit alternate phone"
+            maxlength="10"
+            pattern="[0-9]{10}"
+            inputmode="numeric"
+            aria-label="Alternate Phone"
+          >
+        </div>
+        <div>
+          <label for="maritalStatus">Marital Status</label>
+          <select id="maritalStatus" aria-label="Marital Status">
+            <option value="">Select Status</option>
+            <option value="Single">Single</option>
+            <option value="Married">Married</option>
+            <option value="Divorced">Divorced</option>
+            <option value="Widowed">Widowed</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="split-grid">
+        <div>
+          <label for="occupation">Occupation</label>
+          <input
+            type="text"
+            id="occupation"
+            placeholder="Occupation"
+            aria-label="Occupation"
+            maxlength="60"
+            autocomplete="organization-title"
+          >
+        </div>
+        <div>
+          <label for="emergencyRelation">Emergency Contact Relation</label>
+          <select id="emergencyRelation" aria-label="Emergency Contact Relation">
+            <option value="">Select Relation</option>
+            <option value="Parent">Parent</option>
+            <option value="Spouse">Spouse</option>
+            <option value="Sibling">Sibling</option>
+            <option value="Child">Child</option>
+            <option value="Friend">Friend</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="split-grid">
+        <div>
+          <label for="bloodGroup">Blood Group</label>
+          <select id="bloodGroup" aria-label="Blood Group">
+            <option value="">Select Blood Group</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+">B+</option>
+            <option value="B-">B-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
+          </select>
+        </div>
+        <div>
+          <label for="emergencyContact">Emergency Contact</label>
+          <input
+            type="tel"
+            id="emergencyContact"
+            placeholder="10-digit emergency number"
+            maxlength="10"
+            pattern="[0-9]{10}"
+            inputmode="numeric"
+            aria-label="Emergency Contact"
+            required
+          >
+        </div>
+      </div>
+
+      <label for="phone">Phone Number</label>
+      <input
+        type="tel"
+        id="phone"
+        placeholder="Phone Number"
+        maxlength="10"
+        pattern="[0-9]{10}"
+        aria-label="Phone Number"
+        readonly
+      >
+      <p class="helper-text">Phone is auto-filled for phone login and optional for email login.</p>
+
+      <button type="submit" class="btn-primary">Save & Continue</button>
+      <a href="login.html" class="text-link">Back to Login</a>
+
+      <p id="profileMessage" class="inline-message" aria-live="polite"></p>
+    </form>
+  </main>
+
+  <script src="script.js?v=20260314a"></script>
+</body>
+</html>
