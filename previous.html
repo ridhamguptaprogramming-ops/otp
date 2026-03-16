@@ -11,6 +11,7 @@
     <h1>Previous Medical Reports</h1>
     <div class="button-group">
       <a href="dashboard.html" class="link-button btn-secondary">Back to Dashboard</a>
+      <button type="button" class="btn-secondary" onclick="exportFilteredReports()">Export Visible</button>
       <button type="button" class="btn-primary" onclick="exportAllReports()">Export All</button>
       <button type="button" class="delete-btn" onclick="clearReports()">Clear All</button>
     </div>
@@ -46,6 +47,10 @@
       <p id="summaryFollowUpDue">0</p>
     </article>
     <article class="mini-stat">
+      <h3>Not Overdue</h3>
+      <p id="summaryFollowUpOnTrack">0</p>
+    </article>
+    <article class="mini-stat">
       <h3>Follow-up Overdue</h3>
       <p id="summaryFollowUpOverdue">0</p>
     </article>
@@ -64,6 +69,10 @@
     <article class="mini-stat">
       <h3>Priority Mismatch</h3>
       <p id="summaryPriorityMismatch">0</p>
+    </article>
+    <article class="mini-stat">
+      <h3>Priority Aligned</h3>
+      <p id="summaryAligned">0</p>
     </article>
     <article class="mini-stat">
       <h3>ICU Cases</h3>

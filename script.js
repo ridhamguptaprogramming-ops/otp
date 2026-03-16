@@ -35,6 +35,7 @@ let breathInterval = null;
 let pulseInterval = null;
 let monitoringActive = false;
 let otpCooldownInterval = null;
+let otpExpiryInterval = null;
 const API_BASE_URL = (() => {
   const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
   if (isLocalHost && window.location.port && window.location.port !== "5000") {
@@ -44,6 +45,7 @@ const API_BASE_URL = (() => {
 })();
 const PHONE_PATTERN = /^\d{10}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const OTP_COOLDOWN_SECONDS = 20;
 
 function byId(id) {
   return document.getElementById(id);
@@ -165,6 +167,71 @@ function showMessage(elementId, message, type = "success") {
   if (message) {
     el.classList.add(type === "error" ? "error-message" : "success-message");
   }
+}
+
+function setButtonBusy(button, busy, busyLabel = "Please wait...") {
+  if (!button) {
+    return;
+  }
+
+  if (busy) {
+    if (!button.dataset.originalLabel) {
+      button.dataset.originalLabel = button.textContent || "";
+    }
+    button.disabled = true;
+    button.classList.add("is-busy");
+    button.textContent = busyLabel;
+    return;
+  }
+
+  button.disabled = false;
+  button.classList.remove("is-busy");
+  if (button.dataset.originalLabel) {
+    button.textContent = button.dataset.originalLabel;
+    delete button.dataset.originalLabel;
+  }
+}
+
+function resetOtpMeta(defaultMessage = "OTP will be valid for a limited time.") {
+  const otpMeta = byId("otpMeta");
+  if (!otpMeta) {
+    return;
+  }
+
+  otpMeta.textContent = defaultMessage;
+  otpMeta.classList.remove("otp-expiring", "otp-expired");
+}
+
+function startOtpExpiryCountdown(totalSeconds = 180) {
+  const otpMeta = byId("otpMeta");
+  if (!otpMeta) {
+    return;
+  }
+
+  clearInterval(otpExpiryInterval);
+  let seconds = Math.max(0, Number(totalSeconds) || 0);
+
+  const update = () => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    otpMeta.textContent = `OTP expires in ${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    otpMeta.classList.toggle("otp-expiring", seconds <= 30 && seconds > 0);
+    otpMeta.classList.remove("otp-expired");
+  };
+
+  update();
+  otpExpiryInterval = setInterval(() => {
+    seconds -= 1;
+    if (seconds <= 0) {
+      clearInterval(otpExpiryInterval);
+      otpExpiryInterval = null;
+      otpMeta.textContent = "OTP expired. Request a new OTP.";
+      otpMeta.classList.remove("otp-expiring");
+      otpMeta.classList.add("otp-expired");
+      return;
+    }
+    update();
+  }, 1000);
 }
 
 function getReportField(report, keys, fallback = "N/A") {
@@ -848,6 +915,7 @@ async function initPage() {
   setupSidebarBehavior();
   hydrateSharedData();
   restoreDraftIfAvailable();
+  resetOtpMeta();
 
   if (byId("reportContainer")) {
     loadReports();
@@ -893,7 +961,7 @@ function setupSidebarBehavior() {
   });
 }
 
-function startOtpCooldown(totalSeconds = 20) {
+function startOtpCooldown(totalSeconds = OTP_COOLDOWN_SECONDS) {
   const resendBtn = byId("resendBtn");
   if (!resendBtn) {
     return;
@@ -901,7 +969,13 @@ function startOtpCooldown(totalSeconds = 20) {
 
   clearInterval(otpCooldownInterval);
 
-  let seconds = totalSeconds;
+  let seconds = Math.max(0, Number(totalSeconds) || 0);
+  if (seconds <= 0) {
+    resendBtn.disabled = false;
+    resendBtn.textContent = "Resend OTP";
+    return;
+  }
+
   resendBtn.disabled = true;
   resendBtn.textContent = `Resend OTP (${seconds}s)`;
 
@@ -928,53 +1002,74 @@ async function sendOTP() {
     return;
   }
 
+  const sendOtpBtn = byId("sendOtpBtn");
+  setButtonBusy(sendOtpBtn, true, "Sending OTP...");
+
   const loginPhone = identifier.phone;
   const loginEmail = identifier.email;
   const clinicCodeInput = byId("clinicCode");
   const clinicCode = clinicCodeInput ? clinicCodeInput.value.trim().toUpperCase() : "";
-  localStorage.removeItem(STORAGE_KEYS.SESSION_TOKEN);
-  const response = await apiRequest("/send-otp", {
-    method: "POST",
-    body: JSON.stringify({ phone: loginPhone, email: loginEmail, clinicCode }),
-    skipAuth: true
-  });
+  try {
+    localStorage.removeItem(STORAGE_KEYS.SESSION_TOKEN);
+    const response = await apiRequest("/send-otp", {
+      method: "POST",
+      body: JSON.stringify({ phone: loginPhone, email: loginEmail, clinicCode }),
+      skipAuth: true
+    });
 
-  if (!response.ok) {
-    showMessage("authMessage", response.message, "error");
-    return;
-  }
+    if (!response.ok) {
+      const retryAfterSeconds = Number(response.data && response.data.retryAfterSeconds);
+      if (response.status === 429 && retryAfterSeconds > 0) {
+        startOtpCooldown(retryAfterSeconds);
+      }
+      showMessage("authMessage", response.message, "error");
+      return;
+    }
 
-  generatedOtp = String((response.data && response.data.demoOtp) || "");
-  localStorage.setItem(STORAGE_KEYS.GENERATED_OTP, generatedOtp);
-  localStorage.setItem(STORAGE_KEYS.OTP_IDENTIFIER, loginEmail || loginPhone);
-  localStorage.setItem(STORAGE_KEYS.OTP_IDENTIFIER_TYPE, identifier.type);
-  if (loginPhone) {
-    localStorage.setItem(STORAGE_KEYS.PHONE, loginPhone);
-  } else {
-    localStorage.removeItem(STORAGE_KEYS.PHONE);
-  }
-  if (loginEmail) {
-    localStorage.setItem(STORAGE_KEYS.LOGIN_EMAIL, loginEmail);
-    localStorage.setItem(STORAGE_KEYS.EMAIL, loginEmail);
-  } else {
-    localStorage.removeItem(STORAGE_KEYS.LOGIN_EMAIL);
-  }
-  localStorage.setItem(STORAGE_KEYS.OTP_SENT_AT, String(Date.now()));
-  localStorage.setItem(STORAGE_KEYS.CLINIC_CODE, clinicCode);
+    generatedOtp = String((response.data && response.data.demoOtp) || "");
+    if (generatedOtp) {
+      localStorage.setItem(STORAGE_KEYS.GENERATED_OTP, generatedOtp);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.GENERATED_OTP);
+    }
+    localStorage.setItem(STORAGE_KEYS.OTP_IDENTIFIER, loginEmail || loginPhone);
+    localStorage.setItem(STORAGE_KEYS.OTP_IDENTIFIER_TYPE, identifier.type);
+    if (loginPhone) {
+      localStorage.setItem(STORAGE_KEYS.PHONE, loginPhone);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.PHONE);
+    }
+    if (loginEmail) {
+      localStorage.setItem(STORAGE_KEYS.LOGIN_EMAIL, loginEmail);
+      localStorage.setItem(STORAGE_KEYS.EMAIL, loginEmail);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.LOGIN_EMAIL);
+    }
+    localStorage.setItem(STORAGE_KEYS.OTP_SENT_AT, String(Date.now()));
+    localStorage.setItem(STORAGE_KEYS.CLINIC_CODE, clinicCode);
 
-  const otpBox = byId("otpBox");
-  if (otpBox) {
-    otpBox.hidden = false;
-  }
+    const otpBox = byId("otpBox");
+    if (otpBox) {
+      otpBox.hidden = false;
+    }
 
-  const otpInput = byId("otp");
-  if (otpInput) {
-    otpInput.focus();
-  }
+    const otpInput = byId("otp");
+    if (otpInput) {
+      otpInput.value = "";
+      otpInput.focus();
+    }
 
-  startOtpCooldown(20);
-  const sentTo = loginEmail || loginPhone || "selected contact";
-  showMessage("authMessage", `OTP sent to ${sentTo}. Demo OTP: ${generatedOtp || "sent"}`);
+    const cooldownSeconds = Number((response.data && response.data.cooldownSeconds) || OTP_COOLDOWN_SECONDS);
+    const expiresInSeconds = Number((response.data && response.data.expiresInSeconds) || 180);
+    startOtpCooldown(cooldownSeconds);
+    startOtpExpiryCountdown(expiresInSeconds);
+
+    const sentTo = loginEmail || loginPhone || "selected contact";
+    const demoOtpNote = generatedOtp ? ` Demo OTP: ${generatedOtp}` : "";
+    showMessage("authMessage", `OTP sent to ${sentTo}.${demoOtpNote}`);
+  } finally {
+    setButtonBusy(sendOtpBtn, false);
+  }
 }
 
 function resendOTP() {
@@ -984,7 +1079,7 @@ function resendOTP() {
   }
 
   const sentAt = Number(localStorage.getItem(STORAGE_KEYS.OTP_SENT_AT) || "0");
-  const waitMs = 20_000;
+  const waitMs = OTP_COOLDOWN_SECONDS * 1000;
   const remaining = waitMs - (Date.now() - sentAt);
 
   if (remaining > 0) {
@@ -1036,37 +1131,50 @@ async function verify() {
     return;
   }
 
-  const response = await apiRequest("/verify-otp", {
-    method: "POST",
-    body: JSON.stringify({ phone, email, otp: entered }),
-    skipAuth: true
-  });
+  const verifyBtn = byId("verifyBtn");
+  setButtonBusy(verifyBtn, true, "Verifying...");
 
-  if (!response.ok) {
-    showMessage("authMessage", response.message, "error");
-    return;
+  try {
+    const response = await apiRequest("/verify-otp", {
+      method: "POST",
+      body: JSON.stringify({ phone, email, otp: entered }),
+      skipAuth: true
+    });
+
+    if (!response.ok) {
+      showMessage("authMessage", response.message, "error");
+      return;
+    }
+
+    clearInterval(otpCooldownInterval);
+    otpCooldownInterval = null;
+    clearInterval(otpExpiryInterval);
+    otpExpiryInterval = null;
+    resetOtpMeta();
+
+    localStorage.removeItem(STORAGE_KEYS.GENERATED_OTP);
+    localStorage.removeItem(STORAGE_KEYS.OTP_SENT_AT);
+    localStorage.removeItem(STORAGE_KEYS.OTP_IDENTIFIER);
+    localStorage.removeItem(STORAGE_KEYS.OTP_IDENTIFIER_TYPE);
+    localStorage.setItem(STORAGE_KEYS.SESSION_TOKEN, response.data.sessionToken || "");
+    const responsePhone = String((response.data && response.data.phone) || "").trim();
+    const responseEmail = normalizeEmail((response.data && response.data.email) || "");
+
+    if (responsePhone) {
+      localStorage.setItem(STORAGE_KEYS.PHONE, responsePhone);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.PHONE);
+    }
+
+    if (responseEmail) {
+      localStorage.setItem(STORAGE_KEYS.LOGIN_EMAIL, responseEmail);
+      localStorage.setItem(STORAGE_KEYS.EMAIL, responseEmail);
+    }
+
+    window.location.href = "details.html";
+  } finally {
+    setButtonBusy(verifyBtn, false);
   }
-
-  localStorage.removeItem(STORAGE_KEYS.GENERATED_OTP);
-  localStorage.removeItem(STORAGE_KEYS.OTP_SENT_AT);
-  localStorage.removeItem(STORAGE_KEYS.OTP_IDENTIFIER);
-  localStorage.removeItem(STORAGE_KEYS.OTP_IDENTIFIER_TYPE);
-  localStorage.setItem(STORAGE_KEYS.SESSION_TOKEN, response.data.sessionToken || "");
-  const responsePhone = String((response.data && response.data.phone) || "").trim();
-  const responseEmail = normalizeEmail((response.data && response.data.email) || "");
-
-  if (responsePhone) {
-    localStorage.setItem(STORAGE_KEYS.PHONE, responsePhone);
-  } else {
-    localStorage.removeItem(STORAGE_KEYS.PHONE);
-  }
-
-  if (responseEmail) {
-    localStorage.setItem(STORAGE_KEYS.LOGIN_EMAIL, responseEmail);
-    localStorage.setItem(STORAGE_KEYS.EMAIL, responseEmail);
-  }
-
-  window.location.href = "details.html";
 }
 
 async function submitData() {
@@ -1279,6 +1387,10 @@ function toggle() {
 
 async function logout() {
   await apiRequest("/logout", { method: "POST" });
+  clearInterval(otpCooldownInterval);
+  otpCooldownInterval = null;
+  clearInterval(otpExpiryInterval);
+  otpExpiryInterval = null;
   localStorage.removeItem(STORAGE_KEYS.PHONE);
   localStorage.removeItem(STORAGE_KEYS.LOGIN_EMAIL);
   localStorage.removeItem(STORAGE_KEYS.SESSION_TOKEN);
@@ -2297,6 +2409,14 @@ function sortReportEntries(entries) {
   return list;
 }
 
+function getFilteredReportEntries(reports) {
+  return sortReportEntries(
+    reports
+      .map((report, index) => ({ report, index }))
+      .filter(({ report }) => matchesFilters(report))
+  );
+}
+
 function updatePreviousSummary(filteredEntries, totalStored) {
   const visible = filteredEntries.length;
   const visibleRisks = filteredEntries.map((entry) => parseReportRisk(entry.report));
@@ -2335,6 +2455,8 @@ function updatePreviousSummary(filteredEntries, totalStored) {
   const noFollowUp = filteredEntries.filter((entry) => {
     return getFollowUpStatus(entry.report, today) === "Not Set";
   }).length;
+  const followUpOnTrack = Math.max(visible - followUpOverdue, 0);
+  const alignedPriority = Math.max(visible - priorityMismatch, 0);
   const painValues = filteredEntries
     .map((entry) => String(getReportField(entry.report, ["painScore"], "")).trim())
     .filter((value) => value !== "")
@@ -2361,11 +2483,13 @@ function updatePreviousSummary(filteredEntries, totalStored) {
   const summaryUrgent = byId("summaryUrgent");
   const summaryRoutine = byId("summaryRoutine");
   const summaryFollowUpDue = byId("summaryFollowUpDue");
+  const summaryFollowUpOnTrack = byId("summaryFollowUpOnTrack");
   const summaryFollowUpOverdue = byId("summaryFollowUpOverdue");
   const summaryFollowUpScheduled = byId("summaryFollowUpScheduled");
   const summaryNoFollowUp = byId("summaryNoFollowUp");
   const summaryNeedsAttention = byId("summaryNeedsAttention");
   const summaryPriorityMismatch = byId("summaryPriorityMismatch");
+  const summaryAligned = byId("summaryAligned");
   const summaryICU = byId("summaryICU");
   const summaryHighPain = byId("summaryHighPain");
   const summaryIcuTransfer = byId("summaryIcuTransfer");
@@ -2394,6 +2518,9 @@ function updatePreviousSummary(filteredEntries, totalStored) {
   if (summaryFollowUpDue) {
     summaryFollowUpDue.textContent = String(followUpDue);
   }
+  if (summaryFollowUpOnTrack) {
+    summaryFollowUpOnTrack.textContent = String(followUpOnTrack);
+  }
   if (summaryFollowUpOverdue) {
     summaryFollowUpOverdue.textContent = String(followUpOverdue);
   }
@@ -2408,6 +2535,9 @@ function updatePreviousSummary(filteredEntries, totalStored) {
   }
   if (summaryPriorityMismatch) {
     summaryPriorityMismatch.textContent = String(priorityMismatch);
+  }
+  if (summaryAligned) {
+    summaryAligned.textContent = String(alignedPriority);
   }
   if (summaryICU) {
     summaryICU.textContent = String(icuCases);
@@ -2445,11 +2575,7 @@ function loadReports() {
     return;
   }
 
-  const filteredEntries = reports
-    .map((report, index) => ({ report, index }))
-    .filter(({ report }) => matchesFilters(report));
-
-  const sortedEntries = sortReportEntries(filteredEntries);
+  const sortedEntries = getFilteredReportEntries(reports);
   updatePreviousSummary(sortedEntries, reports.length);
 
   if (sortedEntries.length === 0) {
@@ -2568,6 +2694,33 @@ function exportAllReports() {
   showMessage("reportsMessage", "All reports exported.");
 }
 
+function exportFilteredReports() {
+  const reports = getStoredJSON(STORAGE_KEYS.REPORTS, []);
+  if (reports.length === 0) {
+    showMessage("reportsMessage", "No reports available to export.", "error");
+    return;
+  }
+
+  const visibleEntries = getFilteredReportEntries(reports);
+  if (visibleEntries.length === 0) {
+    showMessage("reportsMessage", "No visible reports to export.", "error");
+    return;
+  }
+
+  const visibleReports = visibleEntries.map((entry) => entry.report);
+  const payload = JSON.stringify(visibleReports, null, 2);
+  const blob = new Blob([payload], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `carejr_reports_visible_${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+
+  URL.revokeObjectURL(url);
+  showMessage("reportsMessage", `${visibleReports.length} visible report(s) exported.`);
+}
+
 async function clearReports() {
   const reports = getStoredJSON(STORAGE_KEYS.REPORTS, []);
   if (reports.length === 0) {
@@ -2652,6 +2805,7 @@ function updateDashboardStats() {
     return triage === "Urgent" || triage === "Emergency";
   }).length;
   const priorityMismatchCount = reports.filter((report) => hasPriorityMismatch(report)).length;
+  const priorityAlignedCount = Math.max(total - priorityMismatchCount, 0);
   const reportsToday = reports.filter(
     (report) => getReportField(report, ["visitDate", "date"], "") === today
   ).length;
@@ -2671,6 +2825,7 @@ function updateDashboardStats() {
   const noFollowUp = reports.filter((report) => {
     return getFollowUpStatus(report, today) === "Not Set";
   }).length;
+  const followUpOnTrack = Math.max(total - followUpOverdue, 0);
   const admittedCases = reports.filter((report) => {
     const admissionStatus = getReportField(report, ["admissionStatus"], "Not Admitted");
     return admissionStatus === "Observation" || admissionStatus === "Admitted" || admissionStatus === "ICU";
@@ -2727,9 +2882,11 @@ function updateDashboardStats() {
   const statFollowUpOverdue = byId("statFollowUpOverdue");
   const statFollowUpScheduled = byId("statFollowUpScheduled");
   const statNoFollowUp = byId("statNoFollowUp");
+  const statFollowUpOnTrack = byId("statFollowUpOnTrack");
   const statNeedsAttention = byId("statNeedsAttention");
   const statTriageEmergency = byId("statTriageEmergency");
   const statPriorityMismatch = byId("statPriorityMismatch");
+  const statPriorityAligned = byId("statPriorityAligned");
   const statAdmittedCases = byId("statAdmittedCases");
   const statIcuCases = byId("statIcuCases");
   const statComorbidityCases = byId("statComorbidityCases");
@@ -2799,6 +2956,10 @@ function updateDashboardStats() {
     statNoFollowUp.innerText = String(noFollowUp);
   }
 
+  if (statFollowUpOnTrack) {
+    statFollowUpOnTrack.innerText = String(followUpOnTrack);
+  }
+
   if (statNeedsAttention) {
     statNeedsAttention.innerText = String(needsAttentionCount);
   }
@@ -2809,6 +2970,10 @@ function updateDashboardStats() {
 
   if (statPriorityMismatch) {
     statPriorityMismatch.innerText = String(priorityMismatchCount);
+  }
+
+  if (statPriorityAligned) {
+    statPriorityAligned.innerText = String(priorityAlignedCount);
   }
 
   if (statAdmittedCases) {

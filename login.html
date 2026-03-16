@@ -22,6 +22,7 @@
         aria-label="Clinic Code"
         autocomplete="organization"
       >
+      <p class="helper-text">Used to tag reports under your clinic/facility.</p>
 
       <label for="phone">Phone Number</label>
       <input
@@ -43,6 +44,7 @@
         aria-label="Email Login"
         autocomplete="email"
       >
+      <p class="helper-text">Use phone or email. Either one is enough for OTP.</p>
 
       <button type="button" id="sendOtpBtn" class="btn-primary">Send OTP</button>
 
@@ -57,9 +59,11 @@
           inputmode="numeric"
           autocomplete="one-time-code"
           aria-label="OTP Code"
+          aria-describedby="otpMeta"
         >
+        <p id="otpMeta" class="helper-text">OTP will be valid for a limited time.</p>
         <div class="button-group">
-          <button type="button" onclick="verify()" class="btn-primary">Verify OTP</button>
+          <button type="button" id="verifyBtn" onclick="verify()" class="btn-primary">Verify OTP</button>
           <button type="button" id="resendBtn" onclick="resendOTP()" class="btn-secondary">Resend OTP</button>
         </div>
       </div>

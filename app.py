@@ -13,7 +13,9 @@ BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "carejr.db"
 
 OTP_TTL_SECONDS = 180
+OTP_COOLDOWN_SECONDS = 20
 SESSION_TTL_HOURS = 24 * 7
+EXPOSE_DEMO_OTP = os.environ.get("CAREJR_EXPOSE_DEMO_OTP", "").strip().lower() in {"1", "true", "yes"}
 
 PHONE_RE = re.compile(r"^\d{10}$")
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
@@ -246,6 +248,10 @@ def _after_request(response):
         response.headers["Vary"] = "Origin"
         response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS"
+    if request.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
     return response
 
 
@@ -269,11 +275,41 @@ def send_otp():
     login_email = login_email_or_error
     clinic_code = str(data.get("clinicCode", "")).strip().upper()
 
-    otp = f"{secrets.randbelow(9000) + 1000:04d}"
     now = utc_now()
+    otp = f"{secrets.randbelow(9000) + 1000:04d}"
     expires_at = now + timedelta(seconds=OTP_TTL_SECONDS)
 
     with get_db() as db:
+        latest_otp_row = db.execute(
+            """
+            SELECT created_at
+            FROM otps
+            WHERE phone = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (account_id,),
+        ).fetchone()
+
+        if latest_otp_row:
+            last_created = parse_iso(str(latest_otp_row["created_at"]))
+            if last_created:
+                if last_created.tzinfo is None:
+                    last_created = last_created.replace(tzinfo=timezone.utc)
+                elapsed_seconds = (now - last_created.astimezone(timezone.utc)).total_seconds()
+                if elapsed_seconds < OTP_COOLDOWN_SECONDS:
+                    retry_after = max(1, int(OTP_COOLDOWN_SECONDS - elapsed_seconds))
+                    return (
+                        jsonify(
+                            {
+                                "ok": False,
+                                "error": f"Please wait {retry_after}s before requesting a new OTP.",
+                                "retryAfterSeconds": retry_after,
+                            }
+                        ),
+                        429,
+                    )
+
         db.execute(
             """
             INSERT INTO otps (phone, otp, created_at, expires_at, used)
@@ -300,16 +336,16 @@ def send_otp():
             (account_id, clinic_code, login_phone, login_email, isoformat_utc(now)),
         )
 
-    return jsonify(
-        {
-            "ok": True,
-            "message": "OTP sent successfully.",
-            "demoOtp": otp,
-            "identifierType": identifier_type,
-            "cooldownSeconds": 20,
-            "expiresInSeconds": OTP_TTL_SECONDS,
-        }
-    )
+    response_payload = {
+        "ok": True,
+        "message": "OTP sent successfully.",
+        "identifierType": identifier_type,
+        "cooldownSeconds": OTP_COOLDOWN_SECONDS,
+        "expiresInSeconds": OTP_TTL_SECONDS,
+    }
+    if EXPOSE_DEMO_OTP:
+        response_payload["demoOtp"] = otp
+    return jsonify(response_payload)
 
 
 @app.route("/api/verify-otp", methods=["POST"])
@@ -329,24 +365,28 @@ def verify_otp():
     with get_db() as db:
         otp_row = db.execute(
             """
-            SELECT id, expires_at
+            SELECT id, otp, expires_at
             FROM otps
-            WHERE phone = ? AND otp = ? AND used = 0
+            WHERE phone = ? AND used = 0
             ORDER BY id DESC
             LIMIT 1
             """,
-            (account_id, otp),
+            (account_id,),
         ).fetchone()
 
         if not otp_row:
-            return json_error("Invalid OTP. Please try again.", 401)
+            return json_error("No active OTP found. Please request a new OTP.", 401)
 
-        expires_at = parse_iso(otp_row["expires_at"])
+        expires_at = parse_iso(str(otp_row["expires_at"]))
         if not expires_at or expires_at <= now:
-            db.execute("UPDATE otps SET used = 1 WHERE id = ?", (otp_row["id"],))
+            db.execute("UPDATE otps SET used = 1 WHERE phone = ?", (account_id,))
             return json_error("OTP expired. Please request a new OTP.", 401)
 
-        db.execute("UPDATE otps SET used = 1 WHERE id = ?", (otp_row["id"],))
+        latest_otp = str(otp_row["otp"]).strip()
+        if latest_otp != otp:
+            return json_error("Invalid OTP. Please try again.", 401)
+
+        db.execute("UPDATE otps SET used = 1 WHERE phone = ?", (account_id,))
         token = secrets.token_urlsafe(32)
         session_expires = now + timedelta(hours=SESSION_TTL_HOURS)
         db.execute(

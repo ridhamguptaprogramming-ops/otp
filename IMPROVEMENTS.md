@@ -1,4 +1,4 @@
-# CareJR AI Screening - UI and Feature Improvements (v12)
+# CareJR AI Screening - UI and Feature Improvements (v13)
 
 ## Updated Files
 - `app.py`
@@ -10,6 +10,27 @@
 - `previous.html`
 - `script.js`
 - `styles.css`
+
+## v13 Additional Improvements (Current Update)
+### OTP flow hardening
+- Server-side OTP resend cooldown is now enforced (`429` with retry seconds).
+- Verification now accepts only the latest active OTP for the account.
+- Demo OTP is returned only when `CAREJR_EXPOSE_DEMO_OTP=1` is set.
+- API responses now include extra security headers for API routes.
+
+### Login UX and reliability
+- Added OTP expiry helper text with live countdown.
+- Added button busy states during OTP send/verify to prevent duplicate requests.
+- Added clearer helper text for clinic code and phone/email login options.
+
+### Additional dashboard/report counts
+- Dashboard now includes:
+  - `Priority Aligned`
+  - `Not Overdue Follow-up`
+- Previous reports summary now includes:
+  - `Priority Aligned`
+  - `Not Overdue`
+- Added `Export Visible` in previous reports to export currently filtered results.
 
 ## 1. Login UI Improvements
 ### Added new field

@@ -97,6 +97,10 @@ button:disabled {
   box-shadow: none;
 }
 
+button.is-busy {
+  opacity: 0.8;
+}
+
 button:focus-visible,
 a:focus-visible {
   outline: 2px solid var(--green-700);
@@ -403,6 +407,14 @@ button.btn-success {
   border-top-color: var(--blue-500);
 }
 
+.accent-track {
+  border-top-color: #059669;
+}
+
+.accent-aligned {
+  border-top-color: #2563eb;
+}
+
 .risk-breakdown {
   background: var(--surface-0);
   border-radius: 14px;
@@ -422,6 +434,16 @@ button.btn-success {
   gap: 10px;
   align-items: center;
   margin: 8px 0;
+}
+
+#otpMeta.otp-expiring {
+  color: #b45309;
+  font-weight: 600;
+}
+
+#otpMeta.otp-expired {
+  color: #991b1b;
+  font-weight: 700;
 }
 
 .meter-row span {
